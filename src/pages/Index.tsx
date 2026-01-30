@@ -63,14 +63,6 @@ const Index = () => {
         map.behaviors.disable('scrollZoom');
         
         map.setType('yandex#map');
-        
-        fetch('https://api-maps.yandex.ru/2.1/custom-map?apikey=&lang=ru_RU&style=' + encodeURIComponent(JSON.stringify(mapStyle)))
-          .then(() => {
-            map.container.getElement().style.filter = 'grayscale(0)';
-          })
-          .catch(() => {
-            console.log('Custom style not applied, using default');
-          });
 
         mapRef.current = map;
       });
@@ -155,7 +147,7 @@ const Index = () => {
 
   return (
     <div style={{ width: '100vw', height: '100vh', display: 'flex', flexDirection: 'column', overflow: 'hidden', position: 'relative' }}>
-      <div ref={mapContainerRef} style={{ flex: 1, width: '100%', height: '100%' }} />
+      <div ref={mapContainerRef} style={{ flex: 1, width: '100%', height: '100%', filter: 'grayscale(100%) brightness(0.95) contrast(1.1)' }} />
 
       <div style={{ 
         position: 'fixed', 
