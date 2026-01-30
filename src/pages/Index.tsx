@@ -37,9 +37,9 @@ const demandZones: Record<DeliveryType, DemandZone[]> = {
 };
 
 const getZoneColor = (coefficient: number): string => {
-  if (coefficient >= 2.0) return '#8B5CF6';
-  if (coefficient >= 1.5) return '#A78BFA';
-  return '#C4B5FD';
+  if (coefficient >= 2.0) return '#EC4899';
+  if (coefficient >= 1.5) return '#F472B6';
+  return '#FBCFE8';
 };
 
 const Index = () => {
@@ -56,37 +56,21 @@ const Index = () => {
         const map = new window.ymaps.Map(mapContainerRef.current, {
           center: PERM_CENTER,
           zoom: 12,
-          controls: ['zoomControl'],
+          controls: [],
           type: 'yandex#map',
         });
 
+        map.setType('yandex#map');
+        
+        const customMapType = new window.ymaps.MapType('Custom', ['custom#layer']);
+        window.ymaps.layer.storage.add('custom#layer', function () {
+          return new window.ymaps.Layer('https://vec0%d.maps.yandex.net/tiles?l=map&%c&%l&scale=1&lang=ru_RU&style=gray', {
+            tileTransparent: false
+          });
+        });
+        
+        map.setType('Custom');
         map.behaviors.disable('scrollZoom');
-        map.controls.remove('trafficControl');
-        map.controls.remove('searchControl');
-        map.controls.remove('typeSelector');
-        map.controls.remove('fullscreenControl');
-        map.controls.remove('rulerControl');
-
-        const customStyle = [
-          {
-            tags: {
-              all: ['landscape']
-            },
-            stylers: [
-              { saturation: -1 },
-              { lightness: 0.1 }
-            ]
-          },
-          {
-            tags: {
-              all: ['road']
-            },
-            stylers: [
-              { saturation: -1 },
-              { lightness: 0.3 }
-            ]
-          }
-        ];
 
         mapRef.current = map;
       });
