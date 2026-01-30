@@ -1,9 +1,14 @@
 import { useState, useEffect, useRef } from 'react';
-import L from 'leaflet';
-import 'leaflet/dist/leaflet.css';
 import Icon from '@/components/ui/icon';
+import mapStyle from '../mapStyle.json';
 
-const PERM_CENTER: [number, number] = [58.0105, 56.2502];
+declare global {
+  interface Window {
+    ymaps: any;
+  }
+}
+
+const PERM_CENTER = [58.0105, 56.2502];
 
 type DeliveryType = 'walking' | 'car' | 'truck';
 
@@ -40,63 +45,87 @@ const getZoneColor = (coefficient: number): string => {
 
 const Index = () => {
   const [activeType, setActiveType] = useState<DeliveryType>('walking');
-  const mapRef = useRef<L.Map | null>(null);
+  const mapRef = useRef<any>(null);
   const mapContainerRef = useRef<HTMLDivElement>(null);
-  const layerGroupRef = useRef<L.LayerGroup | null>(null);
+  const circlesRef = useRef<any[]>([]);
 
   useEffect(() => {
-    if (!mapContainerRef.current || mapRef.current) return;
+    const initMap = () => {
+      if (!window.ymaps || !mapContainerRef.current || mapRef.current) return;
 
-    const map = L.map(mapContainerRef.current, {
-      center: PERM_CENTER,
-      zoom: 12,
-      zoomControl: false,
-      scrollWheelZoom: true,
-    });
+      window.ymaps.ready(() => {
+        const map = new window.ymaps.Map(mapContainerRef.current, {
+          center: PERM_CENTER,
+          zoom: 12,
+          controls: [],
+        });
 
-    L.tileLayer('https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png', {
-      attribution: '&copy; OpenStreetMap contributors &copy; CARTO',
-      subdomains: 'abcd',
-      maxZoom: 19,
-    }).addTo(map);
+        map.behaviors.disable('scrollZoom');
+        
+        map.setType('yandex#map');
+        
+        fetch('https://api-maps.yandex.ru/2.1/custom-map?apikey=&lang=ru_RU&style=' + encodeURIComponent(JSON.stringify(mapStyle)))
+          .then(() => {
+            map.container.getElement().style.filter = 'grayscale(0)';
+          })
+          .catch(() => {
+            console.log('Custom style not applied, using default');
+          });
 
-    mapRef.current = map;
-    layerGroupRef.current = L.layerGroup().addTo(map);
-
-    return () => {
-      if (mapRef.current) {
-        mapRef.current.remove();
-        mapRef.current = null;
-      }
+        mapRef.current = map;
+      });
     };
+
+    if (window.ymaps) {
+      initMap();
+    } else {
+      const checkYmaps = setInterval(() => {
+        if (window.ymaps) {
+          clearInterval(checkYmaps);
+          initMap();
+        }
+      }, 100);
+
+      return () => clearInterval(checkYmaps);
+    }
   }, []);
 
   useEffect(() => {
-    if (!mapRef.current || !layerGroupRef.current) return;
+    if (!mapRef.current || !window.ymaps) return;
 
-    layerGroupRef.current.clearLayers();
+    circlesRef.current.forEach(shape => mapRef.current.geoObjects.remove(shape));
+    circlesRef.current = [];
 
     const zones = demandZones[activeType];
     zones.forEach(zone => {
       const color = getZoneColor(zone.coefficient);
       const hexagonCoords = createHexagon(zone.position, zone.radius);
       
-      const polygon = L.polygon(hexagonCoords, {
-        fillColor: color,
-        fillOpacity: 0.35,
-        color: color,
-        weight: 2.5,
-        opacity: 0.7,
+      const hexagon = new window.ymaps.Polygon(
+        [hexagonCoords],
+        {
+          hintContent: `Коэффициент: ${zone.coefficient}x`,
+        },
+        {
+          fillColor: color,
+          fillOpacity: 0.35,
+          strokeColor: color,
+          strokeWidth: 2.5,
+          strokeOpacity: 0.7,
+        }
+      );
+
+      hexagon.events.add('click', () => {
+        hexagon.balloon.open(zone.position, `
+          <div style="font-size: 14px; padding: 8px; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Arial, sans-serif;">
+            <div style="font-weight: 600; margin-bottom: 4px; color: #1a1f2c;">Коэффициент: ${zone.coefficient}x</div>
+            <div style="color: #6b7280; font-size: 12px;">Повышенный спрос</div>
+          </div>
+        `);
       });
 
-      polygon.bindPopup(`
-        <div style="font-size: 14px; padding: 8px; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Arial, sans-serif;">
-          <div style="font-weight: 600; margin-bottom: 4px; color: #1a1f2c;">Коэффициент: ${zone.coefficient}x</div>
-          <div style="color: #6b7280; font-size: 12px;">Повышенный спрос</div>
-        </div>
-      `);
-
-      polygon.addTo(layerGroupRef.current!);
+      mapRef.current.geoObjects.add(hexagon);
+      circlesRef.current.push(hexagon);
     });
   }, [activeType]);
 
