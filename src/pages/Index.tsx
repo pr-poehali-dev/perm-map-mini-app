@@ -21,25 +21,52 @@ interface DemandZone {
 
 const demandZones: Record<DeliveryType, DemandZone[]> = {
   walking: [
-    { id: 1, position: [58.0105, 56.2502], coefficient: 1.5, radius: 800 },
-    { id: 2, position: [58.0205, 56.2702], coefficient: 2.0, radius: 600 },
-    { id: 3, position: [57.9905, 56.2302], coefficient: 1.8, radius: 700 },
+    { id: 1, position: [58.0105, 56.2502], coefficient: 2.5, radius: 250 },
+    { id: 2, position: [58.0105, 56.2552], coefficient: 2.5, radius: 250 },
+    { id: 3, position: [58.0105, 56.2452], coefficient: 2.5, radius: 250 },
+    { id: 4, position: [58.0155, 56.2527], coefficient: 2.0, radius: 250 },
+    { id: 5, position: [58.0155, 56.2477], coefficient: 2.0, radius: 250 },
+    { id: 6, position: [58.0055, 56.2527], coefficient: 2.0, radius: 250 },
+    { id: 7, position: [58.0055, 56.2477], coefficient: 2.0, radius: 250 },
+    { id: 8, position: [58.0205, 56.2502], coefficient: 1.5, radius: 250 },
+    { id: 9, position: [58.0005, 56.2502], coefficient: 1.5, radius: 250 },
+    { id: 10, position: [58.0255, 56.2702], coefficient: 2.5, radius: 250 },
+    { id: 11, position: [58.0255, 56.2752], coefficient: 2.5, radius: 250 },
+    { id: 12, position: [58.0305, 56.2727], coefficient: 2.0, radius: 250 },
   ],
   car: [
-    { id: 1, position: [58.0305, 56.2602], coefficient: 1.6, radius: 1200 },
-    { id: 2, position: [57.9805, 56.2202], coefficient: 2.2, radius: 1000 },
-    { id: 3, position: [58.0005, 56.2902], coefficient: 1.4, radius: 900 },
+    { id: 1, position: [58.0305, 56.2602], coefficient: 2.5, radius: 250 },
+    { id: 2, position: [58.0305, 56.2652], coefficient: 2.5, radius: 250 },
+    { id: 3, position: [58.0305, 56.2552], coefficient: 2.5, radius: 250 },
+    { id: 4, position: [58.0355, 56.2627], coefficient: 2.0, radius: 250 },
+    { id: 5, position: [58.0355, 56.2577], coefficient: 2.0, radius: 250 },
+    { id: 6, position: [58.0255, 56.2627], coefficient: 2.0, radius: 250 },
+    { id: 7, position: [58.0255, 56.2577], coefficient: 2.0, radius: 250 },
+    { id: 8, position: [57.9805, 56.2202], coefficient: 2.5, radius: 250 },
+    { id: 9, position: [57.9805, 56.2252], coefficient: 2.5, radius: 250 },
+    { id: 10, position: [57.9855, 56.2227], coefficient: 2.0, radius: 250 },
+    { id: 11, position: [57.9755, 56.2227], coefficient: 2.0, radius: 250 },
+    { id: 12, position: [58.0005, 56.2902], coefficient: 1.5, radius: 250 },
   ],
   truck: [
-    { id: 1, position: [58.0405, 56.2402], coefficient: 1.9, radius: 1500 },
-    { id: 2, position: [57.9705, 56.2702], coefficient: 2.5, radius: 1300 },
-    { id: 3, position: [58.0105, 56.2102], coefficient: 1.7, radius: 1100 },
+    { id: 1, position: [58.0405, 56.2402], coefficient: 2.5, radius: 250 },
+    { id: 2, position: [58.0405, 56.2452], coefficient: 2.5, radius: 250 },
+    { id: 3, position: [58.0405, 56.2352], coefficient: 2.5, radius: 250 },
+    { id: 4, position: [58.0455, 56.2427], coefficient: 2.0, radius: 250 },
+    { id: 5, position: [58.0455, 56.2377], coefficient: 2.0, radius: 250 },
+    { id: 6, position: [58.0355, 56.2427], coefficient: 2.0, radius: 250 },
+    { id: 7, position: [58.0355, 56.2377], coefficient: 2.0, radius: 250 },
+    { id: 8, position: [57.9705, 56.2702], coefficient: 2.5, radius: 250 },
+    { id: 9, position: [57.9705, 56.2752], coefficient: 2.5, radius: 250 },
+    { id: 10, position: [57.9755, 56.2727], coefficient: 2.0, radius: 250 },
+    { id: 11, position: [57.9655, 56.2727], coefficient: 2.0, radius: 250 },
+    { id: 12, position: [58.0105, 56.2102], coefficient: 1.5, radius: 250 },
   ],
 };
 
 const getZoneColor = (coefficient: number): string => {
-  if (coefficient >= 2.0) return '#EC4899';
-  if (coefficient >= 1.5) return '#F472B6';
+  if (coefficient >= 2.5) return '#EC4899';
+  if (coefficient >= 2.0) return '#F472B6';
   return '#FBCFE8';
 };
 
@@ -100,10 +127,10 @@ const Index = () => {
         },
         {
           fillColor: color,
-          fillOpacity: 0.35,
+          fillOpacity: 0.6,
           strokeColor: color,
-          strokeWidth: 2.5,
-          strokeOpacity: 0.7,
+          strokeWidth: 1,
+          strokeOpacity: 0.8,
         }
       );
 
