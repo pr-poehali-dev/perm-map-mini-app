@@ -54,25 +54,36 @@ const Index = () => {
       if (!window.ymaps || !mapContainerRef.current || mapRef.current) return;
 
       window.ymaps.ready(() => {
-        const map = new window.ymaps.Map(mapContainerRef.current, {
-          center: PERM_CENTER,
-          zoom: 12,
-          controls: [],
-        });
-
-        map.behaviors.disable('scrollZoom');
-        
-        map.setType('yandex#map');
-        
-        fetch('https://api-maps.yandex.ru/2.1/custom-map?apikey=&lang=ru_RU&style=' + encodeURIComponent(JSON.stringify(mapStyle)))
-          .then(() => {
-            map.container.getElement().style.filter = 'grayscale(0)';
-          })
-          .catch(() => {
-            console.log('Custom style not applied, using default');
+        window.ymaps.modules.require(['MapType', 'layer.tileContainer.CanvasContainer'], (MapType: any, CanvasContainer: any) => {
+          const customMapType = new MapType('Custom', {
+            storage: (tileNumber: any, tileZoom: any) => {
+              return `https://vec0${(tileNumber[0] + tileNumber[1]) % 4}.maps.yandex.net/tiles?l=map&x=${tileNumber[0]}&y=${tileNumber[1]}&z=${tileZoom}&scale=1&lang=ru_RU`;
+            },
+            projection: window.ymaps.projection.sphericalMercator,
+            tileSize: [256, 256],
           });
 
-        mapRef.current = map;
+          const map = new window.ymaps.Map(mapContainerRef.current, {
+            center: PERM_CENTER,
+            zoom: 12,
+            controls: [],
+            type: 'yandex#map',
+          }, {
+            customMapTypes: {
+              'custom#map': customMapType
+            }
+          });
+
+          map.behaviors.disable('scrollZoom');
+          
+          const style = new window.ymaps.style.Manager(mapStyle, {
+            useMapMargin: false
+          });
+          
+          map.options.set('customMapType', style);
+
+          mapRef.current = map;
+        });
       });
     };
 
