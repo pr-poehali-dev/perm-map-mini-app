@@ -1,5 +1,6 @@
 import { useState, useEffect, useRef } from 'react';
 import Icon from '@/components/ui/icon';
+import mapStyle from '../mapStyle.json';
 
 declare global {
   interface Window {
@@ -57,20 +58,19 @@ const Index = () => {
           center: PERM_CENTER,
           zoom: 12,
           controls: [],
-          type: 'yandex#map',
         });
 
+        map.behaviors.disable('scrollZoom');
+        
         map.setType('yandex#map');
         
-        const customMapType = new window.ymaps.MapType('Custom', ['custom#layer']);
-        window.ymaps.layer.storage.add('custom#layer', function () {
-          return new window.ymaps.Layer('https://vec0%d.maps.yandex.net/tiles?l=map&%c&%l&scale=1&lang=ru_RU&style=gray', {
-            tileTransparent: false
+        fetch('https://api-maps.yandex.ru/2.1/custom-map?apikey=&lang=ru_RU&style=' + encodeURIComponent(JSON.stringify(mapStyle)))
+          .then(() => {
+            map.container.getElement().style.filter = 'grayscale(0)';
+          })
+          .catch(() => {
+            console.log('Custom style not applied, using default');
           });
-        });
-        
-        map.setType('Custom');
-        map.behaviors.disable('scrollZoom');
 
         mapRef.current = map;
       });
