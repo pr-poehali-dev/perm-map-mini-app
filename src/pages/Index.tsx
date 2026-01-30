@@ -57,7 +57,36 @@ const Index = () => {
           center: PERM_CENTER,
           zoom: 12,
           controls: ['zoomControl'],
+          type: 'yandex#map',
         });
+
+        map.behaviors.disable('scrollZoom');
+        map.controls.remove('trafficControl');
+        map.controls.remove('searchControl');
+        map.controls.remove('typeSelector');
+        map.controls.remove('fullscreenControl');
+        map.controls.remove('rulerControl');
+
+        const customStyle = [
+          {
+            tags: {
+              all: ['landscape']
+            },
+            stylers: [
+              { saturation: -1 },
+              { lightness: 0.1 }
+            ]
+          },
+          {
+            tags: {
+              all: ['road']
+            },
+            stylers: [
+              { saturation: -1 },
+              { lightness: 0.3 }
+            ]
+          }
+        ];
 
         mapRef.current = map;
       });
@@ -80,39 +109,59 @@ const Index = () => {
   useEffect(() => {
     if (!mapRef.current || !window.ymaps) return;
 
-    circlesRef.current.forEach(circle => mapRef.current.geoObjects.remove(circle));
+    circlesRef.current.forEach(shape => mapRef.current.geoObjects.remove(shape));
     circlesRef.current = [];
 
     const zones = demandZones[activeType];
     zones.forEach(zone => {
       const color = getZoneColor(zone.coefficient);
-      const circle = new window.ymaps.Circle(
-        [zone.position, zone.radius],
-        {},
+      const hexagonCoords = createHexagon(zone.position, zone.radius);
+      
+      const hexagon = new window.ymaps.Polygon(
+        [hexagonCoords],
+        {
+          hintContent: `Коэффициент: ${zone.coefficient}x`,
+        },
         {
           fillColor: color,
-          fillOpacity: 0.3,
+          fillOpacity: 0.35,
           strokeColor: color,
-          strokeWidth: 2,
+          strokeWidth: 2.5,
+          strokeOpacity: 0.7,
         }
       );
 
-      circle.events.add('click', () => {
-        const balloon = new window.ymaps.Balloon(mapRef.current);
-        balloon.open(zone.position, {
-          content: `
-            <div style="font-size: 14px; padding: 8px;">
-              <div style="font-weight: 600; margin-bottom: 4px;">Коэффициент: ${zone.coefficient}x</div>
-              <div style="color: #888;">Повышенный спрос</div>
-            </div>
-          `,
-        });
+      hexagon.events.add('click', () => {
+        hexagon.balloon.open(zone.position, `
+          <div style="font-size: 14px; padding: 8px; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Arial, sans-serif;">
+            <div style="font-weight: 600; margin-bottom: 4px; color: #1a1f2c;">Коэффициент: ${zone.coefficient}x</div>
+            <div style="color: #6b7280; font-size: 12px;">Повышенный спрос</div>
+          </div>
+        `);
       });
 
-      mapRef.current.geoObjects.add(circle);
-      circlesRef.current.push(circle);
+      mapRef.current.geoObjects.add(hexagon);
+      circlesRef.current.push(hexagon);
     });
   }, [activeType]);
+
+  const createHexagon = (center: [number, number], radiusMeters: number): [number, number][] => {
+    const earthRadius = 6371000;
+    const latRad = (center[0] * Math.PI) / 180;
+    
+    const latOffset = (radiusMeters / earthRadius) * (180 / Math.PI);
+    const lonOffset = (radiusMeters / earthRadius) * (180 / Math.PI) / Math.cos(latRad);
+    
+    const points: [number, number][] = [];
+    for (let i = 0; i < 6; i++) {
+      const angle = (Math.PI / 3) * i;
+      const lat = center[0] + latOffset * Math.sin(angle);
+      const lon = center[1] + lonOffset * Math.cos(angle);
+      points.push([lat, lon]);
+    }
+    
+    return points;
+  };
 
   const deliveryButtons = [
     { type: 'walking' as DeliveryType, icon: 'PersonStanding' },
