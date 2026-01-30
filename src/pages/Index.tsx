@@ -91,6 +91,14 @@ const Index = () => {
         
         map.setType('yandex#map');
 
+        const panes = map.panes.get('ground');
+        if (panes && panes.getElement) {
+          const element = panes.getElement();
+          if (element) {
+            element.style.filter = 'grayscale(100%) brightness(0.95) contrast(1.1)';
+          }
+        }
+
         mapRef.current = map;
       });
     };
@@ -174,7 +182,7 @@ const Index = () => {
 
   return (
     <div style={{ width: '100vw', height: '100vh', display: 'flex', flexDirection: 'column', overflow: 'hidden', position: 'relative' }}>
-      <div ref={mapContainerRef} style={{ flex: 1, width: '100%', height: '100%', filter: 'grayscale(100%) brightness(0.95) contrast(1.1)' }} />
+      <div ref={mapContainerRef} style={{ flex: 1, width: '100%', height: '100%' }} />
 
       <div style={{ 
         position: 'fixed', 
