@@ -1,5 +1,5 @@
-import { MapContainer, TileLayer, Circle, Popup } from 'react-leaflet';
-import { useState } from 'react';
+import { useState, useEffect, useRef } from 'react';
+import L from 'leaflet';
 import 'leaflet/dist/leaflet.css';
 import Icon from '@/components/ui/icon';
 
@@ -40,6 +40,54 @@ const getZoneColor = (coefficient: number): string => {
 
 const Index = () => {
   const [activeType, setActiveType] = useState<DeliveryType>('walking');
+  const mapRef = useRef<L.Map | null>(null);
+  const mapContainerRef = useRef<HTMLDivElement>(null);
+  const circlesRef = useRef<L.Circle[]>([]);
+
+  useEffect(() => {
+    if (!mapContainerRef.current || mapRef.current) return;
+
+    const map = L.map(mapContainerRef.current).setView(PERM_CENTER, 12);
+    
+    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+      attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>',
+    }).addTo(map);
+
+    mapRef.current = map;
+
+    return () => {
+      map.remove();
+      mapRef.current = null;
+    };
+  }, []);
+
+  useEffect(() => {
+    if (!mapRef.current) return;
+
+    circlesRef.current.forEach(circle => circle.remove());
+    circlesRef.current = [];
+
+    const zones = demandZones[activeType];
+    zones.forEach(zone => {
+      const color = getZoneColor(zone.coefficient);
+      const circle = L.circle(zone.position, {
+        color: color,
+        fillColor: color,
+        fillOpacity: 0.3,
+        weight: 2,
+        radius: zone.radius,
+      }).addTo(mapRef.current!);
+
+      circle.bindPopup(`
+        <div style="font-size: 14px;">
+          <div style="font-weight: 600; margin-bottom: 4px;">Коэффициент: ${zone.coefficient}x</div>
+          <div style="color: #888;">Повышенный спрос</div>
+        </div>
+      `);
+
+      circlesRef.current.push(circle);
+    });
+  }, [activeType]);
 
   const deliveryButtons = [
     { type: 'walking' as DeliveryType, icon: 'PersonStanding' },
@@ -49,40 +97,7 @@ const Index = () => {
 
   return (
     <div className="h-screen w-screen flex flex-col overflow-hidden bg-background">
-      <div className="flex-1 relative">
-        <MapContainer
-          center={PERM_CENTER}
-          zoom={12}
-          className="h-full w-full"
-          zoomControl={true}
-          scrollWheelZoom={true}
-        >
-          <TileLayer
-            attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>'
-            url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
-          />
-          {demandZones[activeType].map((zone) => (
-            <Circle
-              key={zone.id}
-              center={zone.position}
-              radius={zone.radius}
-              pathOptions={{
-                color: getZoneColor(zone.coefficient),
-                fillColor: getZoneColor(zone.coefficient),
-                fillOpacity: 0.3,
-                weight: 2,
-              }}
-            >
-              <Popup>
-                <div className="text-sm">
-                  <div className="font-semibold">Коэффициент: {zone.coefficient}x</div>
-                  <div className="text-muted-foreground">Повышенный спрос</div>
-                </div>
-              </Popup>
-            </Circle>
-          ))}
-        </MapContainer>
-      </div>
+      <div ref={mapContainerRef} className="flex-1 w-full" />
 
       <div className="fixed bottom-0 left-0 right-0 bg-background border-t border-border p-4 safe-area-bottom">
         <div className="flex gap-3 max-w-md mx-auto">
