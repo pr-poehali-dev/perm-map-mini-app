@@ -96,20 +96,39 @@ const Index = () => {
   ];
 
   return (
-    <div className="h-screen w-screen flex flex-col overflow-hidden bg-background">
-      <div ref={mapContainerRef} className="flex-1 w-full" />
+    <div style={{ width: '100vw', height: '100vh', display: 'flex', flexDirection: 'column', overflow: 'hidden', position: 'relative' }}>
+      <div ref={mapContainerRef} style={{ flex: 1, width: '100%', height: '100%' }} />
 
-      <div className="fixed bottom-0 left-0 right-0 bg-background border-t border-border p-4 safe-area-bottom">
-        <div className="flex gap-3 max-w-md mx-auto">
+      <div style={{ 
+        position: 'fixed', 
+        bottom: 0, 
+        left: 0, 
+        right: 0, 
+        backgroundColor: 'white', 
+        borderTop: '1px solid #e5e7eb', 
+        padding: '16px',
+        zIndex: 1000
+      }}>
+        <div style={{ display: 'flex', gap: '12px', maxWidth: '448px', margin: '0 auto' }}>
           {deliveryButtons.map((btn) => (
             <button
               key={btn.type}
               onClick={() => setActiveType(btn.type)}
-              className={`flex-1 h-14 rounded-xl transition-all duration-200 flex items-center justify-center ${
-                activeType === btn.type
-                  ? 'bg-primary text-primary-foreground shadow-lg scale-105'
-                  : 'bg-muted text-muted-foreground hover:bg-muted/80'
-              }`}
+              style={{
+                flex: 1,
+                height: '56px',
+                borderRadius: '12px',
+                border: 'none',
+                cursor: 'pointer',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                transition: 'all 0.2s',
+                backgroundColor: activeType === btn.type ? '#0EA5E9' : '#f3f4f6',
+                color: activeType === btn.type ? 'white' : '#6b7280',
+                transform: activeType === btn.type ? 'scale(1.05)' : 'scale(1)',
+                boxShadow: activeType === btn.type ? '0 10px 15px -3px rgba(0, 0, 0, 0.1)' : 'none',
+              }}
             >
               <Icon name={btn.icon} size={28} />
             </button>
