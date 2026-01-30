@@ -1,9 +1,13 @@
 import { useState, useEffect, useRef } from 'react';
-import L from 'leaflet';
-import 'leaflet/dist/leaflet.css';
 import Icon from '@/components/ui/icon';
 
-const PERM_CENTER: [number, number] = [58.0105, 56.2502];
+declare global {
+  interface Window {
+    ymaps: any;
+  }
+}
+
+const PERM_CENTER = [58.0105, 56.2502];
 
 type DeliveryType = 'walking' | 'car' | 'truck';
 
@@ -40,51 +44,72 @@ const getZoneColor = (coefficient: number): string => {
 
 const Index = () => {
   const [activeType, setActiveType] = useState<DeliveryType>('walking');
-  const mapRef = useRef<L.Map | null>(null);
+  const mapRef = useRef<any>(null);
   const mapContainerRef = useRef<HTMLDivElement>(null);
-  const circlesRef = useRef<L.Circle[]>([]);
+  const circlesRef = useRef<any[]>([]);
 
   useEffect(() => {
-    if (!mapContainerRef.current || mapRef.current) return;
+    const initMap = () => {
+      if (!window.ymaps || !mapContainerRef.current || mapRef.current) return;
 
-    const map = L.map(mapContainerRef.current).setView(PERM_CENTER, 12);
-    
-    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-      attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>',
-    }).addTo(map);
+      window.ymaps.ready(() => {
+        const map = new window.ymaps.Map(mapContainerRef.current, {
+          center: PERM_CENTER,
+          zoom: 12,
+          controls: ['zoomControl'],
+        });
 
-    mapRef.current = map;
-
-    return () => {
-      map.remove();
-      mapRef.current = null;
+        mapRef.current = map;
+      });
     };
+
+    if (window.ymaps) {
+      initMap();
+    } else {
+      const checkYmaps = setInterval(() => {
+        if (window.ymaps) {
+          clearInterval(checkYmaps);
+          initMap();
+        }
+      }, 100);
+
+      return () => clearInterval(checkYmaps);
+    }
   }, []);
 
   useEffect(() => {
-    if (!mapRef.current) return;
+    if (!mapRef.current || !window.ymaps) return;
 
-    circlesRef.current.forEach(circle => circle.remove());
+    circlesRef.current.forEach(circle => mapRef.current.geoObjects.remove(circle));
     circlesRef.current = [];
 
     const zones = demandZones[activeType];
     zones.forEach(zone => {
       const color = getZoneColor(zone.coefficient);
-      const circle = L.circle(zone.position, {
-        color: color,
-        fillColor: color,
-        fillOpacity: 0.3,
-        weight: 2,
-        radius: zone.radius,
-      }).addTo(mapRef.current!);
+      const circle = new window.ymaps.Circle(
+        [zone.position, zone.radius],
+        {},
+        {
+          fillColor: color,
+          fillOpacity: 0.3,
+          strokeColor: color,
+          strokeWidth: 2,
+        }
+      );
 
-      circle.bindPopup(`
-        <div style="font-size: 14px;">
-          <div style="font-weight: 600; margin-bottom: 4px;">Коэффициент: ${zone.coefficient}x</div>
-          <div style="color: #888;">Повышенный спрос</div>
-        </div>
-      `);
+      circle.events.add('click', () => {
+        const balloon = new window.ymaps.Balloon(mapRef.current);
+        balloon.open(zone.position, {
+          content: `
+            <div style="font-size: 14px; padding: 8px;">
+              <div style="font-weight: 600; margin-bottom: 4px;">Коэффициент: ${zone.coefficient}x</div>
+              <div style="color: #888;">Повышенный спрос</div>
+            </div>
+          `,
+        });
+      });
 
+      mapRef.current.geoObjects.add(circle);
       circlesRef.current.push(circle);
     });
   }, [activeType]);
